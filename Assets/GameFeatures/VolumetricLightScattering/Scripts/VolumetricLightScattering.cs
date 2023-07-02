@@ -31,6 +31,8 @@ public class VolumetricLightScattering : ScriptableRendererFeature
             new List<ShaderTagId>();
         private FilteringSettings filteringSettings =
             new FilteringSettings(RenderQueueRange.opaque);
+        private readonly Material radialBlurMaterial;
+        private RenderTargetIdentifier cameraColorTargetIdent;
 
         public LightScatteringPass(VolumetricLightScatteringSettings settings)
         {
@@ -43,6 +45,12 @@ public class VolumetricLightScattering : ScriptableRendererFeature
             shaderTagIdList.Add(new ShaderTagId("UniversalForwardOnly"));
             shaderTagIdList.Add(new ShaderTagId("LightweightForward"));
             shaderTagIdList.Add(new ShaderTagId("SRPDefaultUnlit"));
+            radialBlurMaterial = new Material(Shader.Find("Hidden/RW/RadialBlur"));
+        }
+
+        public void SetCameraColorTarget(RenderTargetIdentifier cameraColorTargetIdent)
+        {
+            this.cameraColorTargetIdent = cameraColorTargetIdent;
         }
 
         // This method is called before executing the render pass.
@@ -73,7 +81,7 @@ public class VolumetricLightScattering : ScriptableRendererFeature
         // You don't have to call ScriptableRenderContext.submit, the render pipeline will call it at specific points in the pipeline.
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-            if (!occludersMaterial)
+            if (!occludersMaterial || !radialBlurMaterial)
                 return;
 
             CommandBuffer cmd = CommandBufferPool.Get();
@@ -90,8 +98,24 @@ public class VolumetricLightScattering : ScriptableRendererFeature
                 DrawingSettings drawSettings = CreateDrawingSettings(shaderTagIdList,
                     ref renderingData, SortingCriteria.CommonOpaque);
                 drawSettings.overrideMaterial = occludersMaterial;
-
                 context.DrawRenderers(renderingData.cullResults, ref drawSettings, ref filteringSettings);
+
+                Vector3 sunDirectionWorldSpace =
+                    RenderSettings.sun.transform.forward;
+                Vector3 cameraPositionWorldSpace =
+                    camera.transform.position;
+                Vector3 sunPositionWorldSpace =
+                    cameraPositionWorldSpace + sunDirectionWorldSpace;
+                Vector3 sunPositionViewportSpace =
+                    camera.WorldToViewportPoint(sunPositionWorldSpace);
+
+                radialBlurMaterial.SetVector("_Center", new Vector4(
+                    sunPositionViewportSpace.x, sunPositionViewportSpace.y, 0, 0));
+                radialBlurMaterial.SetFloat("_Intensity", intensity);
+                radialBlurMaterial.SetFloat("_BlurWidth", blurWidth);
+                Blit(cmd, occluders.Identifier(), cameraColorTargetIdent,
+                    radialBlurMaterial);
+                
             }
 
             context.ExecuteCommandBuffer(cmd);
@@ -126,6 +150,9 @@ public class VolumetricLightScattering : ScriptableRendererFeature
     {
         renderer.EnqueuePass(m_ScriptablePass);
     }
+
+    public override void SetupRenderPasses(ScriptableRenderer renderer, in RenderingData renderingData)
+    {
+        m_ScriptablePass.SetCameraColorTarget(renderer.cameraColorTargetHandle);
+    }
 }
-
-
