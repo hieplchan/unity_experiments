@@ -1,9 +1,15 @@
 {
   "dependencies": {
+    "com.brunomikoski.animationsequencer": "0.5.1",
+    "com.coffee.ui-effect": "4.0.0-preview.9",
+    "com.coffee.ui-particle": "4.1.7",
+    "com.cysharp.unitask": "2.3.3",
+    "com.harumak.unityscreennavigator": "https://github.com/Haruma-K/UnityScreenNavigator.git?path=/Assets/UnityScreenNavigator",
     "com.unity.collab-proxy": "2.0.5",
     "com.unity.ide.rider": "3.0.24",
     "com.unity.ide.visualstudio": "2.0.18",
     "com.unity.ide.vscode": "1.2.5",
+    "com.unity.localization": "1.3.2",
     "com.unity.render-pipelines.universal": "14.0.8",
     "com.unity.test-framework": "1.1.33",
     "com.unity.textmeshpro": "3.0.6",
@@ -40,6 +46,21 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0"
-  }
+    "com.unity.modules.xr": "1.0.0",
+    "com.littlebigfun.addressable-importer": "0.16.1"
+  },
+  "scopedRegistries": [
+    {
+      "name": "package.openupm.com",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.brunomikoski.animationsequencer",
+        "com.coffee.ui-effect",
+        "com.coffee.ui-particle",
+        "com.cysharp.unitask",
+        "com.littlebigfun.addressable-importer",
+        "com.openupm"
+      ]
+    }
+  ]
 }
