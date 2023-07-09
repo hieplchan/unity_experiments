@@ -75,6 +75,7 @@ public class ScreenSpaceOutlines : ScriptableRendererFeature
 
         public override void OnCameraCleanup(CommandBuffer cmd)
         {
+            cmd.ReleaseTemporaryRT(normals.id);
         }
     }
 
@@ -119,6 +120,7 @@ public class ScreenSpaceOutlines : ScriptableRendererFeature
 
         public override void OnCameraCleanup(CommandBuffer cmd)
         {
+            cmd.ReleaseTemporaryRT(temporaryBufferID);
         }
     }
 
