@@ -142,6 +142,8 @@ public class ScreenSpaceOutlines : ScriptableRendererFeature
 
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
     {
+        // Access to normals texture with good quality in single pass
+        // is harder than depth texture, so we add seperated pass to do this
         renderer.EnqueuePass(viewSpaceNormalsTexturePass);
         renderer.EnqueuePass(screenSpaceOutlinePass);
     }
