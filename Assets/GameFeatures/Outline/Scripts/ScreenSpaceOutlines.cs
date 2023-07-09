@@ -80,17 +80,41 @@ public class ScreenSpaceOutlines : ScriptableRendererFeature
 
     class ScreenSpaceOutlinePass : ScriptableRenderPass
     {
+        private readonly Material screenSpaceOutlineMaterial;
+        private RenderTargetIdentifier cameraColorTarget;
+        private RenderTargetIdentifier temporaryBuffer;
+        private int temporaryBufferID = 
+            Shader.PropertyToID("_TemporaryBuffer");
+
         public ScreenSpaceOutlinePass(RenderPassEvent renderPassEvent)
         {
             this.renderPassEvent = renderPassEvent;
+            screenSpaceOutlineMaterial = new Material(
+                Shader.Find("Shader Graphs/OutlineShader"));
         }
+
 
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
+            cameraColorTarget = renderingData.cameraData.renderer.cameraColorTarget;
+            temporaryBuffer = new RenderTargetIdentifier("_TemporaryBuffer");
+
+            cmd.GetTemporaryRT(temporaryBufferID, renderingData.cameraData.cameraTargetDescriptor);
         }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
+            if (!screenSpaceOutlineMaterial)
+                return;
+
+            CommandBuffer cmd = CommandBufferPool.Get();
+            using (new ProfilingScope(cmd, new ProfilingSampler("ScreenSpaceOutlines")))
+            {
+                Blit(cmd, cameraColorTarget, temporaryBuffer);
+                Blit(cmd, temporaryBuffer, cameraColorTarget, screenSpaceOutlineMaterial);
+            }
+            context.ExecuteCommandBuffer(cmd);
+            CommandBufferPool.Release(cmd);
         }
 
         public override void OnCameraCleanup(CommandBuffer cmd)
@@ -120,5 +144,3 @@ public class ScreenSpaceOutlines : ScriptableRendererFeature
         renderer.EnqueuePass(screenSpaceOutlinePass);
     }
 }
-
-
