@@ -86,12 +86,25 @@ public class ScreenSpaceOutlines : ScriptableRendererFeature
         private RenderTargetIdentifier temporaryBuffer;
         private int temporaryBufferID = 
             Shader.PropertyToID("_TemporaryBuffer");
+        private List<ShaderTagId> shaderTagIdList;
+        private FilteringSettings filteringSettings;
 
-        public ScreenSpaceOutlinePass(RenderPassEvent renderPassEvent)
+        public ScreenSpaceOutlinePass(RenderPassEvent renderPassEvent,
+            LayerMask outlinesLayerMask)
         {
             this.renderPassEvent = renderPassEvent;
             screenSpaceOutlineMaterial = new Material(
                 Shader.Find("Shader Graphs/OutlineShader"));
+
+            shaderTagIdList = new List<ShaderTagId>
+            {
+                new ShaderTagId("UniversalForward"),
+                new ShaderTagId("UniversalForwardOnly"),
+                new ShaderTagId("LightweightForward"),
+                new ShaderTagId("SRPDefaultUnlit")
+            };
+
+            filteringSettings = new FilteringSettings(RenderQueueRange.opaque, outlinesLayerMask);
         }
 
 
@@ -111,8 +124,15 @@ public class ScreenSpaceOutlines : ScriptableRendererFeature
             CommandBuffer cmd = CommandBufferPool.Get();
             using (new ProfilingScope(cmd, new ProfilingSampler("ScreenSpaceOutlines")))
             {
-                Blit(cmd, cameraColorTarget, temporaryBuffer);
-                Blit(cmd, temporaryBuffer, cameraColorTarget, screenSpaceOutlineMaterial);
+                //Blit(cmd, cameraColorTarget, temporaryBuffer);
+                //Blit(cmd, temporaryBuffer, cameraColorTarget, screenSpaceOutlineMaterial);
+
+                DrawingSettings drawingSettings = CreateDrawingSettings(
+                    shaderTagIdList, ref renderingData,
+                    renderingData.cameraData.defaultOpaqueSortFlags);
+                drawingSettings.overrideMaterial = screenSpaceOutlineMaterial;
+                context.DrawRenderers(renderingData.cullResults,
+                    ref drawingSettings, ref filteringSettings);
             }
             context.ExecuteCommandBuffer(cmd);
             CommandBufferPool.Release(cmd);
@@ -136,8 +156,8 @@ public class ScreenSpaceOutlines : ScriptableRendererFeature
 
     public override void Create()
     {
-        viewSpaceNormalsTexturePass = new ViewSpaceNormalsTexturePass(renderPassEvent, viewSpaceNormalsTextureSettings,outlinesLayerMask);
-        screenSpaceOutlinePass = new ScreenSpaceOutlinePass(renderPassEvent);
+        viewSpaceNormalsTexturePass = new ViewSpaceNormalsTexturePass(renderPassEvent, viewSpaceNormalsTextureSettings, outlinesLayerMask);
+        screenSpaceOutlinePass = new ScreenSpaceOutlinePass(renderPassEvent, outlinesLayerMask);
     }
 
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
